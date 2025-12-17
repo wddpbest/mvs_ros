@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<package format="3">
+    <!-- 包信息 -->
+    <name>mvs_ros</name>
+    <version>0.1.0</version>
+    <description>
+        MVS driver implemented with ROS2.
+    </description>
+    <url type="bug tracker">https://github.com/LauZanMo/mvs_ros/issues</url>
+    <url type="repository">https://github.com/LauZanMo/mvs_ros</url>
+
+    <!-- 工程作者 -->
+    <author email="LauZanMo@whu.edu.cn">LauZanMo</author>
+    <maintainer email="LauZanMo@whu.edu.cn">LauZanMo</maintainer>
+
+    <!-- 许可证 -->
+    <license>GPLv3</license>
+
+    <!-- ROS2依赖 -->
+    <buildtool_depend>ament_cmake</buildtool_depend>
+    <depend>rclcpp</depend>
+    <depend>sensor_msgs</depend>
+    <depend>image_transport</depend>
+    <exec_depend>ros2launch</exec_depend>
+
+    <!-- 导出可执行文件 -->
+    <export>
+        <build_type>ament_cmake</build_type>
+    </export>
+</package>
