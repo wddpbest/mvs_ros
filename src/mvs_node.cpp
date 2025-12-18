@@ -15,9 +15,22 @@ MVSNode::MVSNode(const std::string &program_name) : Node(program_name) {
     // 获取参数
     declare_parameter<std::string>("camera_label", "");
     declare_parameter<std::string>("image_topic", "");
+    declare_parameter<int>("trigger_interval_ms", 100);
 
     camera_label_          = get_parameter("camera_label").as_string();
     const auto image_topic = get_parameter("image_topic").as_string();
+    trigger_interval_ms_   = get_parameter("trigger_interval_ms").as_int();
+
+    // 触发相关参数（使用原始代码的固定值）
+    action_device_key_ = 0x1;
+    action_group_key_ = 0x1;
+    action_group_mask_ = 0xFFFFFFFF;
+    broadcast_ip_ = "192.168.2.255";
+    enable_trigger_ = true;
+
+    // 初始化MVS SDK
+    MV_CHECK(get_logger(), MV_CC_Initialize);
+    RCLCPP_INFO(get_logger(), "MVS SDK initialized successfully!");
 
     // 设置服务质量（QoS）
     rclcpp::QoS qos(rclcpp::QoSInitialization(RMW_QOS_POLICY_HISTORY_KEEP_LAST, 1000));
@@ -35,10 +48,28 @@ MVSNode::MVSNode(const std::string &program_name) : Node(program_name) {
         return;
     }
     RCLCPP_INFO(get_logger(), "%s starts to grab image!", camera_label_.c_str());
+
+    // 创建触发定时器
+    if (enable_trigger_) {
+        RCLCPP_INFO(get_logger(), "Trigger mode enabled with interval: %d ms", trigger_interval_ms_);
+        RCLCPP_INFO(get_logger(), "Action Command config - Device Key: 0x%X, Group Key: 0x%X, Group Mask: 0x%X, Broadcast IP: %s",
+                    action_device_key_, action_group_key_, action_group_mask_, broadcast_ip_.c_str());
+
+        trigger_timer_ = create_wall_timer(
+            std::chrono::milliseconds(trigger_interval_ms_),
+            std::bind(&MVSNode::triggerTimerCallback, this)
+        );
+    }
 }
 
 MVSNode::~MVSNode() {
     RCLCPP_INFO(get_logger(), "Closing %s...", camera_label_.c_str());
+
+    // 停止触发定时器
+    if (trigger_timer_) {
+        trigger_timer_->cancel();
+        trigger_timer_.reset();
+    }
 
     if (camera_handle_) {
         MV_CHECK(get_logger(), MV_CC_StopGrabbing, camera_handle_);
@@ -46,6 +77,10 @@ MVSNode::~MVSNode() {
         MV_CHECK(get_logger(), MV_CC_DestroyHandle, camera_handle_);
         camera_handle_ = nullptr;
     }
+
+    // 释放MVS SDK资源
+    MV_CHECK(get_logger(), MV_CC_Finalize);
+    RCLCPP_INFO(get_logger(), "MVS SDK resources released");
 
     RCLCPP_INFO(get_logger(), "%s closed!", camera_label_.c_str());
 }
@@ -169,6 +204,28 @@ void MVSNode::imageCallback(unsigned char *data, MV_FRAME_OUT_INFO_EX *frame_inf
 
     // 发布图像
     node->image_pub_.publish(std::move(image_msg));
+}
+
+void MVSNode::sendActionCommand() {
+    MV_ACTION_CMD_INFO action_cmd_info = {0};
+    MV_ACTION_CMD_RESULT_LIST action_cmd_results = {0};
+
+    // 配置Action Command参数
+    action_cmd_info.nDeviceKey = action_device_key_;
+    action_cmd_info.nGroupKey = action_group_key_;
+    action_cmd_info.nGroupMask = action_group_mask_;
+    action_cmd_info.pBroadcastAddress = broadcast_ip_.c_str();
+    action_cmd_info.nTimeOut = 0;  // 0表示不需要ACK
+
+    // 发送Action Command
+    const auto ret = MV_GIGE_IssueActionCommand(&action_cmd_info, &action_cmd_results);
+    if (ret != MV_OK) {
+        RCLCPP_ERROR(get_logger(), "Failed to send Action Command: %d", ret);
+    }
+}
+
+void MVSNode::triggerTimerCallback() {
+    sendActionCommand();
 }
 
 std::string getFileName(const std::string &file) {
