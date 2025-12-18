@@ -25,6 +25,11 @@ def generate_launch_description():
         default_value="camera0",
         description="Label of the MVS camera0.",
     )
+    mvs_camera0_trigger_interval_arg = DeclareLaunchArgument(
+        "mvs_camera0_trigger_interval",
+        default_value="100",
+        description="Trigger interval in milliseconds for camera0.",
+    )
 
     mvs_camera0_node = GroupAction(
         [
@@ -41,6 +46,7 @@ def generate_launch_description():
                 ),
                 launch_arguments={
                     "mvs_camera_label": LaunchConfiguration("mvs_camera0_label"),
+                    "trigger_interval_ms": LaunchConfiguration("mvs_camera0_trigger_interval"),
                 }.items(),
             ),
         ]
@@ -49,6 +55,7 @@ def generate_launch_description():
     return LaunchDescription(
         [
             mvs_camera0_label_arg,
+            mvs_camera0_trigger_interval_arg,
             mvs_camera0_node,
         ]
     )
