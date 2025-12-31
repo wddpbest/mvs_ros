@@ -36,8 +36,22 @@ private:
      */
     static void imageCallback(unsigned char *data, MV_FRAME_OUT_INFO_EX *frame_info, void *user);
 
+    /**
+     * @brief 触发定时器回调函数
+     */
+    void triggerTimerCallback();
+
     image_transport::Publisher image_pub_; ///< 图像发布者
 
-    void *camera_handle_{nullptr}; ///< 相机句柄
-    std::string camera_label_;     ///< 相机标签
+    void *camera_handle_{nullptr};         ///< 相机句柄
+    std::string camera_label_;             ///< 相机标签
+
+    // 触发相关参数
+    unsigned int trigger_interval_ms_;      ///< 触发间隔时间（毫秒）
+    unsigned int action_device_key_;       ///< Action Command设备密钥
+    unsigned int action_group_key_;        ///< Action Command组密钥
+    unsigned int action_group_mask_;       ///< Action Command组掩码
+    std::string broadcast_ip_;             ///< 广播IP地址
+    bool enable_trigger_;                  ///< 是否启用触发
+    rclcpp::TimerBase::SharedPtr trigger_timer_; ///< 触发定时器
 };

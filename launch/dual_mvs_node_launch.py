@@ -25,20 +25,40 @@ def generate_launch_description():
         default_value="camera0",
         description="Label of the MVS camera0.",
     )
-    mvs_camera0_trigger_interval_arg = DeclareLaunchArgument(
-        "mvs_camera0_trigger_interval",
-        default_value="100",
-        description="Trigger interval in milliseconds for camera0.",
-    )
     mvs_camera1_label_arg = DeclareLaunchArgument(
         "mvs_camera1_label",
         default_value="camera1",
         description="Label of the MVS camera1.",
     )
-    mvs_camera1_trigger_interval_arg = DeclareLaunchArgument(
-        "mvs_camera1_trigger_interval",
+    trigger_interval_arg = DeclareLaunchArgument(
+        "trigger_interval_ms",
         default_value="100",
-        description="Trigger interval in milliseconds for camera1.",
+        description="Trigger interval in milliseconds for both cameras.",
+    )
+    enable_trigger_arg = DeclareLaunchArgument(
+        "enable_trigger",
+        default_value="true",
+        description="Enable trigger mode for both cameras.",
+    )
+    action_device_key_arg = DeclareLaunchArgument(
+        "action_device_key",
+        default_value="1",
+        description="Action command device key (hex value).",
+    )
+    action_group_key_arg = DeclareLaunchArgument(
+        "action_group_key",
+        default_value="1",
+        description="Action command group key (hex value).",
+    )
+    action_group_mask_arg = DeclareLaunchArgument(
+        "action_group_mask",
+        default_value="4294967295",  # 0xFFFFFFFF
+        description="Action command group mask (hex value).",
+    )
+    broadcast_ip_arg = DeclareLaunchArgument(
+        "broadcast_ip",
+        default_value="192.168.2.255",
+        description="Broadcast IP address for action commands.",
     )
 
     mvs_camera0_node = GroupAction(
@@ -56,7 +76,12 @@ def generate_launch_description():
                 ),
                 launch_arguments={
                     "mvs_camera_label": LaunchConfiguration("mvs_camera0_label"),
-                    "trigger_interval_ms": LaunchConfiguration("mvs_camera0_trigger_interval"),
+                    "trigger_interval_ms": LaunchConfiguration("trigger_interval_ms"),
+                    "enable_trigger": LaunchConfiguration("enable_trigger"),
+                    "action_device_key": LaunchConfiguration("action_device_key"),
+                    "action_group_key": LaunchConfiguration("action_group_key"),
+                    "action_group_mask": LaunchConfiguration("action_group_mask"),
+                    "broadcast_ip": LaunchConfiguration("broadcast_ip"),
                 }.items(),
             ),
         ]
@@ -76,7 +101,12 @@ def generate_launch_description():
                 ),
                 launch_arguments={
                     "mvs_camera_label": LaunchConfiguration("mvs_camera1_label"),
-                    "trigger_interval_ms": LaunchConfiguration("mvs_camera1_trigger_interval"),
+                    "trigger_interval_ms": LaunchConfiguration("trigger_interval_ms"),
+                    "enable_trigger": LaunchConfiguration("enable_trigger"),
+                    "action_device_key": LaunchConfiguration("action_device_key"),
+                    "action_group_key": LaunchConfiguration("action_group_key"),
+                    "action_group_mask": LaunchConfiguration("action_group_mask"),
+                    "broadcast_ip": LaunchConfiguration("broadcast_ip"),
                 }.items(),
             ),
         ]
@@ -85,9 +115,13 @@ def generate_launch_description():
     return LaunchDescription(
         [
             mvs_camera0_label_arg,
-            mvs_camera0_trigger_interval_arg,
             mvs_camera1_label_arg,
-            mvs_camera1_trigger_interval_arg,
+            trigger_interval_arg,
+            enable_trigger_arg,
+            action_device_key_arg,
+            action_group_key_arg,
+            action_group_mask_arg,
+            broadcast_ip_arg,
             mvs_camera0_node,
             mvs_camera1_node,
         ]
